@@ -1,0 +1,1306 @@
+---
+title: "BANA 7025 - Data Wrangling Project"
+author: "Group 7"
+output: html_document
+---
+
+---
+**Members** : Soumi Giri, Arvind Kurumbal Radhakrishnan, Samreen Pathan, Saksham Bhutani, Divyanshu Kumar
+---
+
+# Hotel Data Project {.tabset}
+
+## 1. Introduction {.tabset}
+
+### 1.1 Problem Statement
+
+Tourism has always being a very lucrative industry worth millions of dollars in US alone. Due to the pandemic in 2020 the tourism industry was one of the worst impacted sectors. But as the world is moving towards a new normal we are taking a look at what strategies can be devised to improve booking rates for hotels as well as improve the hotel revenues.
+
+To infer the different marketing and tactical strategies to improve hotel bookings we are taking a look at the `hotels` data provided to us. The data gives us details of hotel bookings from 1st of July of 2015 to the 31st of August 2017, including bookings that effectively arrived and bookings that were canceled. We have 2 hotel types from the same chain in our data ***Resort Hotel*** and ***City Hotel*** for which we have details regarding bookings like arrival dates, family members, type of room, booking medium etc. Both the hotels are located in Portugal, The *Resort Hotel* in resort region in Algarve and the *City Hotel* in Lisbon. Using the data we are trying to identify actionable strategies which would help us increase the booking rates of the hotels while also trying to identify the customer preferences. 
+
+### 1.2 Approach
+
+We have a host of information at our disposal including arrival date information, duration of stay, customer demographics (number of adults/children), booking channel information (travel agents/tour operators details), customer historic behavior (booking changes/cancellations) etc. These features will be analyzed against number of bookings/Average Daily Rate/number of cancellations. This data exploration exercise should help:
+
+* A person with little context of the field gain insights on trends in the hotel industry 
+* Serve as good starting point for someone looking to enter the industry 
+* Help existing players modify their market strategies
+
+### 1.3 Analytical Steps
+
+Following were the steps taken:
+
+1. **Identify features**: Analyze all features and identify key features on the basis of the insights to be generated.
+2. **Clean data**: Diagnose and treat any problems in the data on a per feature basis. 
+3. **Exploratory Data Analysis**:
+    * *Summarize*: Understand distribution of variables, use summary statistics like mean, median etc.  
+    * *Visualize*: Use visualizations to better understand the structure and distributions across variables.
+4. **Generate hypothesis**: On the basis of EDA formulate hypothesis using key features 
+5. **Test hypothesis**: Test generated hypothesis to check validity of claims
+6. **Conclusion**: Infer result of hypothesis test and generate insights in accordance with the results of the testing 
+
+### 1.4 Benefits of the Analysis
+
+This analysis will give the management team of the Portugal based hotel chain, a good understanding of bookings and cancellation trends over time and across other variables like customer demographics and services provided by the hotel. The insights can also be considered as a generalized trend for the industry across similar geographical regions. In addition to gaining an understanding of prevalent trends, this analysis can also be the foundation for design of marketing and operational strategies.
+
+## 2. Packages Required {.tabset}
+
+### 2.1 Packages Used in Analysis
+
+The following packages are loaded to conduct our analysis
+
+```{r message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(DT)
+library(plotly)
+library(viridis)
+library(wordcloud)
+library(RColorBrewer)
+```
+
+### 2.2 Package Description
+
+The following packages are used for our analysis:
+
+1. **dplyr** - dplyr is a grammar of data manipulation, providing a consistent set of verbs that helps us solve the most common data manipulation challenges.
+2. **ggplot2** - ggplot2 is a system for declaratively creating graphics, to help us visualize our data. We provide the data, tell ggplot2 how to map variables to aesthetics, what graphical primitives to use, and it takes care of the details.
+3. **knitr** - This is an alternative tool to Sweave with a more flexible design and new features like caching and finer control of graphics. This help us incorporate more dynamic graphic representation (example: table views) for our report.
+4. **DT** - R data objects (matrices or data frames) can be displayed as tables on HTML pages, and DataTables provides filtering, pagination, sorting, and many other features in the tables.
+5. **plotly** - Plotly is an R package for creating interactive web-based graphs via plotly's JavaScript graphing library, plotly.js
+6. **viridis** - Provides color scales to make plots that are pretty, better represent data, easier to read by those with colorblindness, and prints well in gray scale.
+7. **wordcloud** - Generates wordcloud in R
+8. **RColorBrewer** - RColorBrewer is an R packages that uses the work from http://colorbrewer2.org/ to help you choose sensible colour schemes for figures in R. The colors are split into three group, sequential, diverging, and qualitative.
+
+
+## 3. Data Preparation {.tabset}
+
+### 3.1 Source of Data
+
+Data used for our analysis can be found [here](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-02-11/readme.md).
+
+### 3.2 Data Description
+
+The data format is mixed (raw and processed).The data is comprised of two types of hotels i.e. Resort Hotel (40,060 obs) located in Algarve and City Hotel (79,330 obs) located in Lisbon. The data was collected between July 1st, 2015 and August 31st, 2017. Since the data is real, hotel name and any customer identifiers are not included.The data has 32 variables which can be classified into the following categories:
+
+1. **Time Based Features** - Gives us when a booking was made, when the booking party arrived and how long the stay was. ArrivalDateDayOfMonth, ArrivalDateMonth, ArrivalDateWeekNumber, ArrivalDateYear, LeadTime etc
+
+2. **Customer Demography Features** - Characteristics of the customers who had made the booking. Adults, Babies, Children, Country etc
+
+3. **Booking Profile** - These columns provide us a specific characteristics of a customer's booking. AssignedRoomType, BookingChanges, DaysInWaitingList, IsRepeatedGuest etc
+
+4. **Market Channels** - Different channels through which the reservation was made. Agent, Company, DistributionChannel, MarketSegment.
+
+5. **Hotel Services** - Different additional services that the hotel provides. meal, required_car_parking_spaces, total_of_special_requests.
+
+The data was collected for educational purposes and is focusing on revenue management. Data was obtained directly from the hotels’ PMS databases’ servers.The PMS assured no missing data exists in its database tables. However, in some categorical variables like Agent or Company, “NULL” is presented as one of the categories. This should not be considered a missing value, but rather as “not applicable”. For example, if a booking “Agent” is defined as “NULL” it means that the booking did not came from a travel agent.
+
+The objective of the data is to give a better understanding of this market as multiple things can be explored by this data like customer segmentation, seasonality, cancellation prediction, etc.
+
+A detailed data dictionary view - [Link](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-02-11/readme.md#data-dictionary).
+
+
+### 3.3 Data Importing and Cleaning {.tabset}
+
+```{r message=FALSE, warning=FALSE}
+hotels <- read.csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv')
+```
+
+#### 3.3.1 Understanding Data Structure 
+
+In our `hotels` data, we have 13 character variables, 18 numeric variables and 1 date variable.
+
+```{r message=FALSE, warning=FALSE}
+str(hotels)
+```
+
+Below we observe the summary statistics for all ournumerics columns.
+
+```{r}
+num_cols <- unlist(lapply(hotels, is.numeric))
+
+summary(hotels[, num_cols])
+```
+
+
+#### 3.3.2 Understanding Data Distribution
+
+**Days in waiting list**
+
+We observe that ***96%*** bookings were confirmed within a day.
+
+**Booking Changes**
+
+We observe that for *Booking Changes*, ***95%*** of the values lie between 0 and 2, ***99%*** between 0 and 4. There are only 267 (0.2%) such cases where there are more than 4 booking changes. 
+
+**Lead Time**
+
+We observe that ***3148*** bookings in our `hotels` data has *Lead Time* of more than a year. From the below data we also see that `Resort Hotel` has lower average lead time than `City Hotel`.
+
+
+```{r, figures-side, fig.show="hold", out.width="33%"}
+hist(hotels$days_in_waiting_list,
+     main="Distribution of days in waiting list",
+     xlab = "Days in waiting list",
+     col = "#00BFC4")
+hist(hotels$booking_changes,
+     main="Distribution of Booking changes",
+     xlab = "Booking changes",
+     ylim=c(0,80000),
+     col = "#00BFC4")
+hist(hotels$lead_time,
+     main="Distribution of Lead time",
+     xlab = "Lead time",
+     col = "#00BFC4")
+
+```
+
+
+**Previous cancellations**
+
+We observe that for *Previous cancellations*, ***99%*** of the values lie between 0 and 1. There are only ***317*** such cases where there are more than 2 previous cancellations.
+
+**Previous bookings not canceled**
+
+We observe that for *Previous bookings not canceled*, ***99%*** of the values lie between 0 and 7. There are only ***552*** such cases where there are more than 7 non-cancellations. 
+
+```{r, fig.show="hold", out.width="50%"}
+#Understand variable and visually inspect
+hist(hotels$previous_cancellations,
+     main="Distribution of Previous Cancellation",
+     xlab = "Previous Cancellations",
+     col = "#00BFC4")
+hist(hotels$previous_bookings_not_canceled,
+     main="Distribution of Non Cancelled Bookings",
+     xlab = "Previous non cancelled bookings",
+     col = "#00BFC4")
+
+
+```
+
+
+
+#### 3.3.3 NULL/NA Identification and Treatment
+
+```{r}
+colSums(is.na(hotels))
+```
+
+As mentioned earlier for the agent and company columns, the string "NULL" indicates that the booking wasn't made through an agent/company. Below are the summary numbers for such bookings.
+
+```{r}
+length(hotels$agent[hotels$agent == "NULL"])
+```
+```{r}
+length(hotels$company[hotels$company == "NULL"])
+```
+Agent column has 16340 (~13%) NULLs and Company has 112593 (~94%) NULLs. This indicates that these bookings were not made via any agent or company.
+
+Rest of the columns do not have any NULLs or missing values.
+
+#### 3.3.4 Checking for Outliers
+
+We check for outliers for the following  numeric variables
+
+**ADR**
+
+We observe that for ***ADR***, all values lie within 550 except one which is way greater, 5400. We are going with an assumption that this is a data entry issue and treating it as an outlier, replacing it by 0.  
+
+```{r}
+boxplot(hotels$adr)
+```
+
+
+After treating the outlier the distribution looks like:
+
+```{r}
+hotels$adr[hotels$adr=="5400"] <- 0
+hist(hotels$adr,
+     main="Distribution of ADR",
+     xlab = "ADR",
+     col = "#00BFC4", breaks = 50)
+```
+
+
+### 3.4 Final Dataset
+
+```{r}
+datatable(hotels[1:100,], caption = 'Table 1: Clean and tidy data.')
+```
+
+
+### 3.5 Data Summary
+
+```{r echo=FALSE, message=FALSE}
+
+sm_table <- read.csv("C:/Users/soumi/Documents/UCinn Course Material/BANA 7025 - Data Wrangling/Final Project/data_summary_table.csv")
+
+sm_table_num <- sm_table %>% filter(Categorical.value == "No") %>% select(Variable.name, Data.type, Mean, Median)
+
+sm_table_cat <- sm_table %>% filter(Categorical.value == "Yes") %>% select(Variable.name, Data.type, Mode, X..Uniques.values)
+
+datatable(sm_table_num, caption = 'Table 2: Numeric Column Summary', options = list(pageLength = 14))
+
+
+datatable(sm_table_cat, caption = 'Table 3: category Column Summary', options = list(pageLength = 18))
+```
+
+
+
+## 4. Exploratory Data Analysis {.tabset}
+
+From the 32 features present in our data we can broadly classify the features in the following categories:
+
+* **Time based features** - Gives us when a booking was made, when the booking party arrived and how long the stay was
+* **Customer Demography features** - Characteristics of the customers who had made the booking. These consists of customer country, family size, etc.
+* **Booking Profile features** - These columns provide us a specific characteristics of a customer booking entry. Example - booking duration. stay in weekends, stay in week night, etc.
+* **Market Channel features** - Different channels through which the reservation was made. Example - online, corporate, etc.
+* **Hotel Services** - Different additional services that the hotel provides. Example - meals, car parking, etc.
+
+We will identify insights and strategies on these 4 categories to understand the factors that influence a hotel booking and cancellation. 
+
+
+### 4.1 Time Based Features {.tabset}
+
+#### 4.1.1 Hypothesis Proposed
+
+We have information regarding the lead time between booking and arrival, arrival date, month, year, duration of stay in the data. Leveraging these, the below hypothesis will be checked:
+
+* Relation between lead time and cancellation, i.e. are bookings that were made a long time back canceled more often or are recently made bookings canceled more often ?
+
+* Relation between lead time and arrival month, i.e. for which months do guests book a long time in advance ?
+
+* Which months/weeks have more bookings ? 
+
+* Which days of each month have more bookings ? Are there certain days in certain months where bookings spike, for example the Dec 25 - Jan 1st week? This combined with the previous analysis can be used for dynamic pricing.
+
+On initial exploration of number of bookings across years, we see a big jump between 2015 and 2016 (almost 30%), the jump between 2016 and 2017 is not as much. Please note that here we exclude the cancellations and consider the number of bookings per month to account for the availability of partial data across years. This might not the right approximation as we do not account for seasonality here, for instance maybe hotel bookings might spike during the holiday season and the 2017 data is only till the month of August. This is something we will explore while carrying out the detailed EDAs.
+
+```{r message=FALSE}
+bookings_by_year <- 
+  hotels %>%
+    filter(is_canceled == 0) %>%
+      group_by(arrival_date_year) %>%
+        summarise(bookings_per_month = n()/n_distinct(arrival_date_month))
+
+ggplot(bookings_by_year,aes(x=arrival_date_year,y=bookings_per_month)) +
+  geom_bar(position = "dodge", stat = "identity", fill = "#88ddbb") + 
+    geom_text(aes(label=paste(round(bookings_per_month,1)))) + 
+      xlab("Arrival Year") +
+        ylab("Average Bookings per Month") +
+          ggtitle("Bookings per month across years")  
+
+
+```
+
+
+
+#### 4.1.2 Analysis and Trends to Answer Key Questions {.tabset}
+
+##### Hypothesis 1
+
+**Relation between lead time and cancellation, i.e. are bookings that were made a long time back canceled more often or are recently made bookings canceled more often ?**
+
+To test the relationship between lead time and cancellation we use the below plot. We observe that a lot of cancellations are in the first few lead time buckets. But this can be misleading because a lot of the bookings are also in the first few lead time buckets. To get a better understanding we plot % cancellations by lead time bins and here we get the insight that cancellation rates increase as lead time increases. Therefore, people who have made the booking a few days before checking in are less likely to cancel. 
+
+```{r message=FALSE}
+
+hotels %>%
+  filter(is_canceled == 1) %>%
+    ggplot(aes(lead_time)) + 
+      geom_histogram(col="black",fill="#00BFC4") + 
+        labs(title="Cancelations by Lead Time", x="Lead Time", y="Count")
+
+```
+```{r message=FALSE}
+
+hotels %>%
+    ggplot(aes(lead_time)) + 
+      geom_histogram(col="black",fill="#00BFC4") + 
+        labs(title="Bookings by Lead Time", x="Lead Time", y="Count")
+
+```
+
+```{r message=FALSE}
+
+hotels %>%
+  mutate(lead_time_bucket = case_when(lead_time >= 0 & lead_time <= 200 ~ "0-200",
+                      lead_time > 200 & lead_time <= 400 ~ "200-400",
+                      lead_time > 400 & lead_time <= 600 ~ "400-600",
+                      lead_time > 600  ~ ">600"),
+         lead_time_bucket = fct_relevel(lead_time_bucket,
+                                       "0-200","200-400","400-600",">600")) %>%
+    group_by(lead_time_bucket) %>%
+      summarise(cancellation_percent = sum(is_canceled == 1)/n()) %>%
+        ggplot(aes(x=lead_time_bucket,y=cancellation_percent*100)) +          
+          geom_bar(stat = "identity", fill = "#00BFC4") +
+            xlab("Lead Time") +
+              ylab("% Cancellations") +
+                ggtitle("Lead Time vs % Cancellations") 
+
+```
+
+##### Hypothesis 2
+
+**Relation between lead time and arrival month, i.e. for which months do guests book a long time in advance ?**
+
+For bookings which weren't canceled, the highest average lead time is for bookings where the arrival month is July and June.
+
+```{r message=FALSE}
+
+leadtime_by_month <- 
+  hotels %>%
+    filter(is_canceled == 0) %>%
+      mutate(arrival_date_month_short = str_sub(arrival_date_month,1,3),
+             arrival_date_month_short = fct_relevel(arrival_date_month_short,
+                                       "Jan",
+                                        "Feb",
+                                        "Mar",
+                                        "Apr",
+                                        "May",
+                                        "Jun",
+                                        "Jul",
+                                        "Aug",
+                                        "Sep",
+                                        "Oct",
+                                        "Nov",
+                                        "Dec")) %>%
+        group_by(arrival_date_month_short) %>%
+          summarise(average_lead_time = mean(lead_time))
+
+ggplot(leadtime_by_month,aes(x=arrival_date_month_short,y=average_lead_time)) +
+  geom_bar(position = "dodge", stat = "identity", fill = "#00BFC4") +
+    xlab("Arrival Month") +
+      ylab("Average Lead Time") +
+        ggtitle("Lead time by Month of Arrival")  
+
+```
+
+##### Hypothesis 3
+
+**Which months/weeks have more bookings ?**
+
+To check the number of bookings across weeks we plot the below line chart. We can infer that the number of bookings peak around week 20-25 and then again between 40-45. As a follow up we will replicate the same analysis separately for resort hotel and city hotel.
+
+```{r message=FALSE}
+bookings_by_week <- 
+  hotels %>%
+    filter(is_canceled == 0) %>%
+      group_by(arrival_date_year,arrival_date_week_number) %>%
+        summarise(bookings_per_week = n())
+
+ggplot(bookings_by_week,aes(x=arrival_date_week_number,y=bookings_per_week,
+                            group=arrival_date_year)) +
+  geom_line(aes(color=as.character(arrival_date_year))) + 
+    ggtitle("Booking trends across weeks")+
+      xlab("Arrival Week Number") +
+        ylab("Bookings Count") +
+          guides(color=guide_legend(title="Arrival Year")) 
+
+```
+
+
+The trends are slightly different when we filter for resort hotels. When we look at 2017 alone, the peak occurred around week 10. For 2016, the 2 peaks are seen around week 20 and 40, which is consistent with the trend observed in the previous chart. 
+
+```{r message=FALSE}
+bookings_by_week <- 
+  hotels %>%
+    filter(is_canceled == 0 & hotel == 'Resort Hotel') %>%
+      group_by(arrival_date_year,arrival_date_week_number) %>%
+        summarise(bookings_per_week = n())
+
+ggplot(bookings_by_week,aes(x=arrival_date_week_number,y=bookings_per_week,
+                            group=arrival_date_year)) +
+  geom_line(aes(color=as.character(arrival_date_year))) + 
+    ggtitle("Resort hotels - Booking trends across weeks") + 
+      xlab("Arrival Week Number") +
+        ylab("Bookings Count") +
+          guides(color=guide_legend(title="Arrival Year")) 
+
+
+```
+
+City hotel trends are consistent with what we saw in the overall weekly trends, i.e. peaks around weeks 20 and 40. 
+
+```{r message=FALSE}
+bookings_by_week <- 
+  hotels %>%
+    filter(is_canceled == 0 & hotel == 'City Hotel') %>%
+      group_by(arrival_date_year,arrival_date_week_number) %>%
+        summarise(bookings_per_week = n())
+
+ggplot(bookings_by_week,aes(x=arrival_date_week_number,y=bookings_per_week,
+                            group=arrival_date_year)) +
+  geom_line(aes(color=as.character(arrival_date_year))) + 
+    ggtitle("City hotels - Booking trends across weeks") + 
+      xlab("Arrival Week Number") +
+        ylab("Bookings Count") +
+          guides(color=guide_legend(title="Arrival Year")) 
+
+
+```
+
+##### Hypothesis 4
+
+**Which days of each month have more bookings ? Are there certain days in certain months where bookings spike, for example the Dec 25 - Jan 1st week? This combined with the previous analysis can be used for dynamic pricing.**
+
+
+Below is a heatmap of number of bookings by month vs day. For ease of interpretation we have created a diverging color palette. Below are a few insights:
+
+1) The highest number of bookings are recorded around the 25th of May and June and around the 5th of May and June
+2) January seems like a poor performing month, the number of bookings haven't crossed 150 on even a single day in January
+
+
+```{r message=FALSE}
+bookings_by_month_day <- 
+  hotels %>%
+    filter(is_canceled == 0 & arrival_date_year == 2016) %>%
+      mutate(arrival_date_month = fct_relevel(arrival_date_month,
+                                         "January",
+                                          "February",
+                                          "March",
+                                          "April",
+                                          "May",
+                                          "June",
+                                          "July",
+                                          "August",
+                                          "September",
+                                          "October",
+                                          "November",
+                                          "December")) %>%
+          group_by(arrival_date_month,arrival_date_day_of_month) %>%
+            summarise(bookings_per_day = n())
+
+ggplot(bookings_by_month_day,aes(x=arrival_date_day_of_month,y=arrival_date_month,fill=bookings_per_day)) +
+  geom_tile() + 
+    ggtitle("Heatmap - 2016 Day of Month vs Month") + 
+      scale_fill_distiller(palette = 'PiYG') + 
+        xlab("Arrival Date") +
+          ylab("Arrival Month") 
+
+
+```
+
+
+
+### 4.2 Hotel Services {.tabset}
+
+
+#### 4.2.1 Hypothesis Proposed
+
+
+From the data provided we see there are few additional services that the customer can opt during booking their stay in the hotels. These services are - meal, car parking and other special request. From the hotel services that are present in the data few hypothesis we propose are:
+
+* Customer opting for 1 or more services are less likely to cancel their reservations
+* Bookings with higher group members and families are more likely to opt for services
+* Families with kids are more likely to opt for meal service during their stay
+* Customers of Resort Hotel are more likely to opt for special service requests than City Hotel Customers
+* During the holiday seasons number of special requests increases for both resort and city hotels
+
+To check the different hypothesis regarding hotel services we will check the booking and cancellation count for `Resort Hotel` and `City Hotel` against the different services provided. We will create an additional field called `services_offered` in our data set which will indicate if a hotel is providing any additional services to the customer. 
+
+```{r}
+hotels$services_offered <- ifelse((hotels$meal != "Undefined" | hotels$required_car_parking_spaces > 0 | hotels$total_of_special_requests > 0), "Yes", "No")
+```
+
+On initial exploration we observe that both `Resort Hotel` and `City Hotel` offer 1 or more services and higher number customers tend to opt for these services. We can see the distribution as below
+
+```{r message=FALSE, fig.align='center'}
+hotel_services <- hotels %>% mutate(canceled = ifelse(is_canceled == 1, "yes", "no")) %>%  group_by(hotel, services_offered, canceled) %>% summarise(bookings = n())
+
+ggplot(data = hotel_services, aes(fill = canceled, x = services_offered, y = bookings)) +
+  geom_bar(position="dodge", stat="identity") +
+  ggtitle("Bookings and Cancellation by Hotel type and service offered") +
+  facet_wrap(~hotel) + 
+  geom_text(aes(label=bookings), position=position_dodge(width=0.9), vjust=-0.25)
+
+```
+
+We can further check which hotels provide which services 
+
+```{r }
+service_table <- hotels %>% mutate(meal_service = ifelse(meal == "Undefined", "no", "yes"),
+                                   car_parking = ifelse(required_car_parking_spaces > 0, "yes", "no"),
+                                   special_request = ifelse(total_of_special_requests > 0, "yes", "no")) %>% 
+                select(hotel, meal_service, car_parking, special_request) %>%
+                filter(meal_service == "yes", car_parking == "yes", special_request == "yes") %>% 
+                distinct(hotel, meal_service, car_parking, special_request, .keep_all = TRUE)
+kable(service_table, caption = "Service offering by hotel type")
+```
+
+From the above table we see both `Resort Hotel` and `City Hotel` provide all 3 types of additional services. Now that we have checked our data we check our stated hypothesis to derive actionable strategies.
+
+
+#### 4.2.2 Analysis and Trends to Answer Key Questions {.tabset}
+
+
+After the initial exploration of the services data we now check the validity of the five proposed hypothesis
+
+##### Hypothesis 1
+
+**Customer opting for 1 or more services are less likely to cancel their reservations**
+
+We check the percent of customers who cancelled after opting for services
+
+```{r message=FALSE, fig.align='center'}
+service_count <- hotels %>% mutate(meal_service = ifelse(meal == "Undefined", 0, 1),
+                                   car_parking = ifelse(required_car_parking_spaces > 0, 1, 0),
+                                   special_request = ifelse(total_of_special_requests > 0, 1, 0),
+                                   total_service = meal_service + car_parking + special_request) %>% 
+                select(hotel, arrival_date_year, total_service, is_canceled) %>% group_by(hotel, arrival_date_year, total_service, is_canceled) %>% 
+                summarise(bookings = n())
+
+service_total <- service_count %>% group_by(hotel, arrival_date_year, total_service) %>% summarise(total = sum(bookings))
+
+service_pctcancelled <- left_join(service_count, service_total, by = c("hotel", "arrival_date_year", "total_service")) %>% filter(is_canceled == 1) %>% 
+                        mutate(pct = (bookings/total) * 100) %>% select(hotel, arrival_date_year, total_service, pct)
+
+ggplot(data = service_pctcancelled, aes(fill = as.character(arrival_date_year), x = total_service, y = pct)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  ggtitle("% Cancellation by services opted") +
+  facet_wrap(~hotel) +
+  xlab("Number of services opted") +
+  ylab("% bookings cancelled") +
+  theme(legend.title = element_blank(), text = element_text(size = 10)) +
+  geom_text(aes(label=paste(round(pct,1), "%")), size = 2.5, position=position_dodge(width=0.9), vjust=-0.3)
+```
+
+From the above plot we can see all `City Hotel` booking have opted for 1 or more services. For `City Hotel` we see people who have opted for 2 services are less likely to cancel their reservation as the cancellation rate drops from 56.7% for people opting 1 service to 26.9% for people opting for 2 services in 2017.
+
+For `Resort Hotel` we see the cancellation rate drops from 39.6% for people opting for 1 service to 28.3% for people opting for 2 services in 2017. In both case of `Resort Hotel` and `City Hotel` 0 cancellations were present for people opting for all 3 services. From the trends observed, our hypothesis hold true. We should promote more additional services to customers to make their booking more attractive.
+
+
+##### Hypothesis 2
+
+
+**Bookings with higher group members and families are more likely to opt for services**
+
+```{r message=FALSE, fig.align='center'}
+hotels %>% mutate(family_size = adults + children + babies,
+                  meal_service = ifelse(meal == "Undefined", 0, 1),
+                  total_service = meal_service + required_car_parking_spaces + total_of_special_requests) %>% filter(is.na(family_size) == FALSE, is_canceled == 0) %>% 
+  group_by(hotel, family_size) %>% summarise(bookings = n()) %>% 
+  ggplot(aes(x = reorder(family_size, bookings), y = bookings)) + 
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  facet_wrap(~hotel)+
+  coord_flip() +
+  scale_y_continuous(name="Total Bookings") +
+  scale_x_discrete(name="Family Size") +
+  ggtitle("Fig a: Total Bookings by Family Size")
+```
+
+
+
+
+```{r message=FALSE, fig.align='center'}
+hotels %>% mutate(family_size = adults + children + babies,
+                  meal_service = ifelse(meal == "Undefined", 0, 1),
+                  total_service = meal_service + required_car_parking_spaces + total_of_special_requests) %>% filter(is.na(family_size) == FALSE, is_canceled == 0) %>% 
+  group_by(hotel, family_size) %>% summarise(avg_services = mean(total_service, na.rm = TRUE)) %>% 
+  ggplot(aes(x = reorder(family_size, family_size), y = avg_services)) + 
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  facet_wrap(~hotel)+
+  coord_flip() +
+  scale_y_continuous(name="Average Services") +
+  scale_x_discrete(name="Family Size") +
+  ggtitle("Fig b: Average Service Opted by Family Size")
+```
+
+From the above chart we notice that majority of the bookings are done family size of 2 for both resort hotel and city hotel. From the Fig b we note families of size 3 are more likely to opt for more services than other groups. To improve the booking rates we can have deals and packages for services for families with 3 or more.
+
+
+##### Hypothesis 3
+
+**Families with kids are more likely to opt for greater service during their stay**
+
+
+```{r message=FALSE, fig.align='center'}
+data2 <- hotels %>% mutate(tot_children = ifelse(children + babies > 0, "yes", "no"),
+                  family_size = adults + children + babies,
+                  meal_service = ifelse(meal == "Undefined", 0, 1),
+                  total_service = meal_service + required_car_parking_spaces + total_of_special_requests,
+                  stay_duration = stays_in_week_nights + stays_in_weekend_nights) %>% 
+  filter(is_canceled == 0, total_service > 0, family_size > 0) %>% group_by(hotel, family_size, tot_children) %>% summarise(booking = n())
+
+ggplot(data = data2[data2$hotel == "City Hotel",], aes(x = reorder(as.character(family_size), family_size), y = booking, fill = tot_children)) +
+  geom_col(position = "fill") +
+  scale_y_continuous(name="Percentage bookings") +
+  xlab("Family Size") +
+  ggtitle("Fig a: Services opted by family with kids vs no kids in City hotel") +
+  labs(fill = "Have Children")
+
+ggplot(data = data2[data2$hotel == "Resort Hotel",], aes(x = reorder(as.character(family_size), family_size), y = booking, fill = tot_children)) +
+  geom_col(position = "fill") +
+  scale_y_continuous(name="Percentage bookings") +
+  xlab("Family Size") +
+  ggtitle("Fig b: Services opted by family with kids vs no kids in Resort hotel")+
+  labs(fill = "Have Children")
+```
+
+
+From the above stacked barplot in **fig a** we observe that in City hotel family sizes of more than 3 tend to have children, but for family sizes 3 or less people without children are more likely to opt for services. Whereas in Resort hotel the maximum group size is 5 and groups of 3 or more tends to have kids with them and they opt for more services. To further understand the number of services opted by families with kids to explore **fig c** and **fig d**.
+
+
+
+```{r message=FALSE, fig.align='center'}
+fam_kids <-   hotels %>% mutate(tot_children = ifelse(children + babies > 0, "yes", "no"),
+                  family_size = adults + children + babies,
+                  meal_service = ifelse(meal == "Undefined", 0, 1),
+                  total_service = meal_service + required_car_parking_spaces + total_of_special_requests,
+                  stay_duration = stays_in_week_nights + stays_in_weekend_nights) %>% 
+  filter(is_canceled == 0) %>% group_by(hotel, total_service, family_size, tot_children) %>% summarise(booking = n()) %>% filter(tot_children == "yes") 
+
+
+ggplot(data = fam_kids[fam_kids$hotel == "City Hotel",], aes(x = reorder(as.character(family_size), family_size), y = booking, fill = as.character(total_service))) +
+  geom_col(position = "fill") +
+  scale_y_continuous(name="Percentage bookings") +
+  xlab("Family Size") +
+  ggtitle("Fig c: Services opted by family with Kids in City hotel") +
+  labs(fill = "Number of Services")
+
+
+ggplot(data = fam_kids[fam_kids$hotel == "Resort Hotel",], aes(x = reorder(as.character(family_size), family_size), y = booking, fill = as.character(total_service))) +
+  geom_col(position = "fill") +
+  scale_y_continuous(name="Percentage bookings") +
+  xlab("Family Size") +
+  ggtitle("Fig d: Services opted by family with Kids in Resort hotel") +
+  labs(fill = "Number of Services")
+  
+
+```
+
+From **fig c** we notice most families with kids tend to opt for 1 or 2 services, but family sizes of 3 tend to opt for higher number of services than 2 in City hotels. From **fig d** a similar trend is being followed in resort hotel.
+
+##### Hypothesis 4
+
+**Customers of Resort Hotel are more likely to opt for special service requests than City Hotel Customers**
+
+```{r message=FALSE, fig.align='center'}
+other_services <- hotels %>% filter(is_canceled == 0) %>% group_by(hotel) %>% summarise(avg_special_service = mean(total_of_special_requests))
+
+ggplot(data = other_services, aes(x = hotel, y = avg_special_service)) +
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  ggtitle("Average specials services by Hotel type") + 
+  xlab("") +
+  ylab("Average Special Services") +
+  geom_text(aes(label= round(avg_special_service,2)), size = 2.5, position=position_dodge(width=0.9), vjust=-0.3)
+```
+
+From the above plot we notice our proposed hypothesis doesn't hold true. On contrary people are opting for more special services in city hotel than in resort hotel. In our hotel data we don't have much details regarding the type of special services request by customers. Based on the observation we can propose to provide deals on special services to City hotel customer to boost booking rate.
+
+
+##### Hypothesis 5 
+
+**During the holiday seasons number of special requests increases for both resort and city hotels**
+
+```{r message=FALSE, fig.align='center'}
+services_holiday <- hotels %>% filter(is_canceled == 0) %>% 
+  mutate(month_date = lubridate::mdy(paste(arrival_date_month, "01",arrival_date_year, sep = "/")),
+         month = match(arrival_date_month, month.name)) %>% 
+  group_by(hotel, arrival_date_year, month) %>% 
+  summarise(special_req = sum(total_of_special_requests),
+            avg_special_req = mean(total_of_special_requests),
+            bookings = n())
+
+ggplot(data = services_holiday, aes(x = month, y = special_req, group = hotel)) +
+  geom_line(aes(color = hotel)) +
+  facet_wrap(~arrival_date_year) +
+  scale_x_discrete("Months", limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")) +
+  ggtitle("Total specials services by Month") + 
+  xlab("Month-Year") +
+  ylab("Total Special Services")
+
+ggplot(data = services_holiday, aes(x = month, y = bookings, group = hotel)) +
+  geom_line(aes(color = hotel)) +
+  facet_wrap(~arrival_date_year) +
+  scale_x_discrete("Months", limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")) +
+  ggtitle("Total bookings by Month") + 
+  xlab("Month-Year") +
+  ylab("Total Bookings")
+
+
+```
+
+From the above line chart we notice the number of special request actually spikes from the month of July and August and then we see a smaller spike in the holiday season. This can be corroborated with the number of bookings made which also spikes during these months every year as can be seen from the above 2 plots.
+
+To improve our booking rates we can provide special offers on such services during the peak booking months.
+
+
+##### Hypothesis 6
+
+**Bed and Breakfast is the most popular meal type opted by customers in both types of Hotel**
+
+```{r message=FALSE, fig.align='center'}
+
+meal_type <- hotels %>% filter(is_canceled == 0) %>% group_by(hotel, meal) %>% summarise(bookings = n())
+
+total_booking <- hotels %>% filter(is_canceled == 0) %>% group_by(hotel) %>% summarise(bookings_tot = n())
+
+meal_type_pct <- left_join(meal_type, total_booking, by = "hotel")
+
+ggplot(data = meal_type_pct, aes(x= reorder(meal, bookings), y = (bookings/bookings_tot))) +
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  facet_wrap(~hotel)+
+  coord_flip() +
+  scale_y_continuous(name="Number of bookings") +
+  scale_x_discrete(name="Meal type") +
+  ggtitle("Popular meal type by hotels")
+
+
+```
+
+
+From the above plots we note the most popular meal type for both city hotel and resort hotel is bed and breakfast. Another interesting observation from the above chart is that for City hotel we note that about 21% of the customers opt for no meal services whereas in resort hotel we note that most customers opt either for bed and breakfast package or half board package which includes breakfast and one other meal – usually dinner. 
+
+From this we can strategize to provide more deals on meal packages to resort customers to boost booking rates.
+
+
+### 4.3 Customer Demography features {.tabset}
+
+
+#### 4.3.1 Hypothesis Proposed 
+
+To ensure anonymity in data the PMS system has removed any customer identifiers. We have few demographic data in our `hotels` data table - number of members, country of origin, type of deposit paid, etc. Based on these characteristics we propose the following key question which will help us identify factors influencing bookings and cancellations:
+
+* The customers who are part of a group or group with children tend to have a longer stay
+* Groups or groups with children  tend to cancel the bookings more as the count  increases
+* Booking would peak around July-August(mid - year) for visitors from different countries
+
+One of the key inferences that we get from the data is that majority of tourist who book the hotel stay are from Portugal which is the home country followed by tourists from Great Britain which can be seen below
+
+```{r message=FALSE, fig.align='center', out.height='150%', out.width='150%'}
+hotels_country <- hotels %>% select(hotel, country, arrival_date_year, is_canceled) %>% filter(is_canceled == 0) %>% 
+                  group_by(country) %>% summarise(bookings = n()) %>% arrange(desc(bookings))
+
+wordcloud(words = hotels_country$country, freq = hotels_country$bookings, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35,            colors=brewer.pal(8, "Dark2"))
+```
+
+To check the hypothesis related to family we need to come up with a logic which would qualify an entry as family. For that, an entry with a non-negative count of either babies or children and a non-negative count of an adult would qualify as a family and is named `is_family`.A new variable named `booking_duration` is created that will indicate the number of days a customer stayed. We'll sum `stays_in_weekend_nights` and `stays_in_week_nights` to compute this.
+ 
+ 
+```{r }
+is_family <- ((hotels$babies> 0  | hotels$children > 0) & hotels$adults > 0)
+hotels$is_family <- is_family
+booking_duration <- hotels$stays_in_weekend_nights + hotels$stays_in_week_nights
+hotels$booking_duration <- booking_duration
+
+
+```
+
+Making a new variable that includes countries that had the most visitors. This has top 6 countries named and rest of the countries as others.
+
+```{r}
+hotels$new_country <- hotels$country
+hotels$new_country[hotels$new_country != "PRT" & hotels$new_country != "GBR" 
+                   & hotels$new_country != "FRA" & hotels$new_country != "ESP"
+                   & hotels$new_country != "DEU" & hotels$new_country != "ITA"] <- "Others"
+hotels$new_country[hotels$new_country == "PRT"] <- "Portugal"
+hotels$new_country[hotels$new_country == "GBR"] <- "Great Britain"
+hotels$new_country[hotels$new_country == "FRA"] <- "France"
+hotels$new_country[hotels$new_country == "ESP"] <- "Spain"
+hotels$new_country[hotels$new_country == "DEU"] <- "Germany"
+hotels$new_country[hotels$new_country == "ITA"] <- "Italy"
+```
+
+#### 4.3.2 Analysis and Trends to Answer Key Questions {.tabset}
+
+##### Hypothesis 1
+
+**The customers who are part of a group or group with children tend to have a longer stay**
+
+The aim is to identify whether the the visitors will stay longer as the no. of visitors in a booking would increase. There are two plots, one for just group size and other for groups which have children i.e. visitors who are part of a family.
+
+```{r  message=FALSE}
+hotels %>% mutate(group_size_n = adults+children+babies,total_stay = stays_in_weekend_nights+stays_in_week_nights)%>%
+group_by(group_size_n)%>%
+summarise(average_booking = mean(total_stay))  %>%
+ggplot(aes(group_size_n,average_booking)) +
+geom_point(color = "#00BFC4",size = 3) +
+labs(title="Booking Duration by group size", x="Group Size", y="Booking Duration")+
+  theme_minimal()
+
+```
+
+
+**For  groups with children:**
+
+```{r  message=FALSE}
+hotels %>% mutate(group_size_n = adults+children+babies,total_stay = stays_in_weekend_nights+stays_in_week_nights)%>%
+filter(is_family == TRUE)  %>%
+group_by(group_size_n)%>%
+summarise(average_booking = mean(total_stay))  %>%
+ggplot(aes(group_size_n,average_booking )) +
+geom_point(color = "#00BFC4",size= 3) +
+labs(title="Booking Duration by room size", x="Group Size", y="Booking Duration")+
+  theme_minimal()
+
+```
+
+both the plot indicate that as the group size increases, the average booking duration also increase, but a certain group size it starts decreasing. But since there are very few entries when it comes to larger group size, that point does have much weight. Overall our hypothesis stands validated as per the plot.
+
+##### Hypothesis 2
+**Groups or groups with children  tend to cancel the bookings more as the count  increases**
+
+The following plots will try and prove that as the count for group member would increase the rate of cancellation would also increase.
+
+```{r}
+pct_count <- hotels %>% mutate( group_size_n = adults + children + babies)%>%
+          group_by(group_size_n)%>%
+          summarise(total_count = n(),count_for_cancelled = sum(is_canceled ==  1),cancelled_pct = (count_for_cancelled/total_count) * 100) 
+
+```
+
+```{r}
+ ggplot(pct_count,aes(group_size_n,cancelled_pct) )+
+  geom_point(color = "#00BFC4",size = 3)+
+  ggtitle("Cancellation Percentage by group size") + 
+            xlab("Group size") +
+            ylab("Cancellation Percentage")+
+  theme_linedraw()
+
+```
+
+**For groups with children**
+
+```{r}
+hotels %>% filter(is_family ==TRUE)%>%
+        mutate( group_size_n = adults + children + babies)%>%
+                group_by(group_size_n)%>%
+                summarise(total_count = n(),count_for_cancelled = sum(is_canceled ==             1),cancelled_pct = (count_for_cancelled/total_count) * 100) %>%
+  ggplot(aes(group_size_n,cancelled_pct))+
+  geom_point(color = "#00BFC4",size = 3)+
+  ggtitle("Cancellation Percentage by group size") + 
+            xlab("Group size") +
+            ylab("Cancellation Percentage")+
+  theme_linedraw()
+```
+
+
+In both the cases it can be observed that as the no. of visitors increase, the cancellation rate also increases. In the plot for groups with children we see for group size equal to 10, we don't any calculation, it is because there is only one entry for group size equal to 10. Other than that the both plot validate our hypothesis.
+
+##### Hypothesis 3
+**Booking would peak around July-August(mid - year) for visitors from different countries**
+
+The hypothesis is that most of the people from different countries would visit around July and august i.e. is around the peak tourism season as summers are usually holiday season for kids.
+
+
+```{r}
+leadtime_by_month <- 
+  hotels %>%
+    filter(is_canceled == 0) %>%
+      mutate(arrival_date_month_short = str_sub(arrival_date_month,1,3),
+             arrival_date_month_short = fct_relevel(arrival_date_month_short,
+                                       "Jan",
+                                        "Feb",
+                                        "Mar",
+                                        "Apr",
+                                        "May",
+                                        "Jun",
+                                        "Jul",
+                                        "Aug",
+                                        "Sep",
+                                        "Oct",
+                                        "Nov",
+                                        "Dec")) %>%
+        group_by(new_country,arrival_date_month_short) %>%
+          summarise(booking_count = n())
+
+ggplot(leadtime_by_month,aes(x=arrival_date_month_short,y=booking_count,group = new_country)) +
+  geom_line(aes(color=as.character(new_country))) +
+    xlab("Arrival Month") +
+      ylab("Total Bookings") +
+        ggtitle("Booking trends by country") +
+          labs(color = "Country")
+
+```
+
+The peaks no. of visitors from most of the countries is around July and August. So our hypothesis stands validated as Summers and Early fall looks to be the most favorable season for visiting.
+
+
+
+### 4.4 Booking Profile Features {.tabset}
+
+#### 4.4.1 Hypothesis Proposed
+
+The booking profile of the customer in consonance with the other feature types can be used to derive holistic insights from the data. Following hypothesis will be tested: 
+
+* There is a relation between the distribution channel and ability of the hotel to provide the requested room
+* Hotels in the city have greater traffic and are more susceptible to overbooking
+* There is a significant relation between the room types and the adr
+* There is a significant relation between the market segment and the assigned room types
+* There is a significant relation between the distribution channel and the reserved room types
+* Certain room types can have a larger lead time
+* Majority of the people tend to not pay deposits while booking
+* Groups with children tend to pay deposits while booking
+* People who do not pay deposit while booking tend to cancel the booking
+
+
+We create a new variable that tracks the ability of the hotel to fulfil the booking by assigning the reserved room to its customer.
+
+```{r}
+hotels$same_room <- (hotels$reserved_room_type == hotels$assigned_room_type)
+```
+
+We create new variables to track groups with children and booking duration of all customers.
+ 
+```{r }
+is_family <- ((hotels$babies> 0  | hotels$children > 0) & hotels$adults > 0)
+hotels$is_family <- is_family
+booking_duration <- hotels$stays_in_weekend_nights + hotels$stays_in_week_nights
+hotels$booking_duration <- booking_duration
+is_deposit = ((hotels$deposit_type == "Non Refund" |     hotels$deposit_type == "Refundable"))
+hotels$is_deposit <- is_deposit
+hotels$is_deposit[hotels$is_deposit == TRUE] <- "Deposited"
+hotels$is_deposit[hotels$is_deposit == FALSE] <- "No Deposit"
+```
+
+
+#### 4.4.2 Analysis and Trends to Answer Key Questions {.tabset}
+
+We can now visually inspect the data to test the validity of our hypothesis.
+
+##### Hypothesis 1
+**Lead time can be an indicator of the number of booking changes**
+
+To test and visualize the relationship between the booking changes and the lead time we use the following plot. Here we can see that there are a greater number of changes in bookings that were booked closer to the arrival date. 
+
+```{r warning=FALSE, message=FALSE }
+total_changes<-sum(hotels$booking_changes)
+
+  hotels %>%
+    filter(is_canceled == 0) %>% 
+    mutate(
+      lead_time_bucket = case_when(
+        lead_time >= 0 & lead_time <= 50 ~ "0-50",
+        lead_time > 50 & lead_time <= 100 ~ "50-100",
+        lead_time > 100 & lead_time <= 150 ~ "100-150",
+        lead_time > 150 & lead_time <= 200 ~ "150-200",
+        lead_time > 200 & lead_time <= 250 ~ "200-250",
+        lead_time > 250 & lead_time <= 300 ~ "250-300",
+        lead_time > 200 & lead_time <= 400 ~ "300-400",
+        lead_time > 400 & lead_time <= 600 ~ "400-600",
+        lead_time > 600 ~ ">600"
+      ),
+      lead_time_bucket = fct_relevel(lead_time_bucket,
+                                     "0-50","50-100","100-150","150-200","200-250","250-300","300-400", "400-600", ">600")
+    )  %>% group_by(lead_time_bucket) %>%
+    summarise(changes_percent = sum(booking_changes) / total_changes) %>%
+    ggplot(aes(x = lead_time_bucket, y = changes_percent * 100)) +
+    geom_bar(stat = "identity", fill = "#00BFC4") +
+    xlab("Lead Time") +
+    ylab("% Booking Changes") +
+    ggtitle("Lead Time vs % Changes")
+
+```
+
+
+##### Hypothesis 2 
+**There is a significant relation between the room types and the adr**
+
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+library(hrbrthemes)
+ggplot(data=hotels, aes(x=adr, group=reserved_room_type, fill=reserved_room_type)) +
+    geom_density() + 
+  coord_cartesian(xlim = c(0,450),ylim = c(0,0.02)) +
+  scale_y_continuous(breaks=seq(0,0.020,0.01)) +
+  facet_wrap(~reserved_room_type,scale="free_y") +
+  ggtitle("ADR for all reserved room types") +
+  theme(legend.position="none",
+        panel.spacing = unit(0.25, "lines"),
+      strip.text.x = element_text(size = 8)) + 
+  xlab("ADR") + 
+  ylab("") 
+```
+
+The plot above helps understand the distribution of ADR for each room. A peak to the right would indicate a higher ADR on average and a flatter spread would indicate that the ADR is spread out. from this particular plot we can infer that rooms types - A, B, E and, P have on average lower ADR than the other rooms that seem to have a much flatter and wider distribution. Interestingly, room type P has almost a bar which would indicate 0 to low ADR.   
+
+
+##### Hypothesis 3
+**There is a relation between the distribution channel and ability of the hotel to provide the requested room**
+
+The distribution channel can affect the ability of a hotel to provide the same room to a customer.
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+hotels %>% 
+  mutate(distribution_channel = fct_relevel(distribution_channel,
+                                            "Corporate","Direct","TA/TO","GDS","Undefined"))  %>%
+  ggplot(aes(distribution_channel, fill = factor(same_room))) + 
+  geom_bar(position = "fill") + 
+  labs(fill = "Same room") +
+  xlab("Distribution channel") +
+  ylab("Proportion") +
+  ggtitle("Same room per Distribution channel")
+```
+The plot above does show a small trend i.e. GDS > TA/TO > Direct > Corporate in the ability to provide the same room. To further investigate this relationship we will see if any one hotel type is causing this trend.
+
+```{r warning=FALSE, message=FALSE}
+hotels %>% 
+  mutate(distribution_channel = fct_relevel(distribution_channel,
+                                            "Corporate","Direct","TA/TO","GDS","Undefined"))  %>%
+  ggplot(aes(distribution_channel, fill = factor(same_room))) + 
+  geom_bar(position = "fill") + 
+  labs(fill = "Same room") +
+  xlab("Distribution channel") +
+  ylab("Proportion") +
+  ggtitle("Distribution channel for Both hotel types") + 
+  facet_wrap(~hotel, nrow = 2)
+```
+The plot above shows that trend is independent of the hotel type as the same can be observed here.
+
+
+##### Hypothesis 4
+**Hotels in the city have greater traffic and are more susceptible to overbooking**
+
+The ability of a hotel to provide the reserved room to the customer is essential in customer satisfaction. However, there are times when a hotel is unable to provide the same. Here we want to visualize the relation between overbooking and the location or type of the hotel and the number of bookings.
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+ggplot(data = hotels, aes(hotel, fill = factor(same_room))) + 
+  geom_bar(position = "dodge") + 
+  labs(fill = "Same room") + 
+  coord_flip() +
+  xlab("Hotel type") +
+  ylab("Count")+
+  ggtitle("Hotel types and overbooking")
+```
+
+
+Here we can see that `City Hotels` do in fact have greater foot traffic but contrary to our initial hypothesis we see that `Resort Hotels`, despite having less than half the number of bookings have the same if not more changes to the room type which can be associated to overbooking. Thus, the location and the type of the hotel do play a role in the ability of a hotel in providing the same room to a customer.
+
+##### Hypothesis 5
+**There is a significant relation between the market segment and the assigned room types**
+
+There may be a relation between market segment and the reserved room types, the reason for this relation may be intrinsic  or extrinsic to the room type.
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+ggplot(data = hotels, aes(assigned_room_type, fill = factor(market_segment))) + 
+  geom_bar(position = "fill") +
+  coord_polar() +
+  xlab("Assigned Room Type") + 
+  ylab("Proportion")+ 
+  labs(fill = "Market Segment")
+```
+
+The plot above shows that only room types L and P are dominated by a single market segment and there is no relation for all other rooms to any single market segment.
+
+##### Hypothesis 6
+**There is a significant relation between the distribution channel and the reserved room types**
+
+There may be a relation between distribution channel and the reserved room types, the reason for this relation may be intrinsic  or extrinsic to the room type.
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+ggplot(data = hotels, aes(reserved_room_type, fill = factor(distribution_channel))) + 
+  geom_bar(position = "fill") +
+  coord_polar() +
+  xlab("Reserved Room Type") + 
+  ylab("Proportion")+ 
+  labs(fill = "Distribution Channel")+
+  ggtitle("Room types and Distribution channel")
+```
+
+Rooms A, D, L and P are dominated by one distribution channel. Room L and P are for Direct and Corporate customers predominantly. This is in line with the plot above as room P was mostly complementary. In line with the above hypothesis we can conclude that there is no significant relation for all other rooms to any single market segment.
+
+##### Hypothesis 7
+**Certain room types can have a larger lead time**
+
+To test the validity of our hypothesis we will use the following plot:
+
+```{r warning=FALSE, message=FALSE}
+ggplot(hotels, aes(lead_time,fill=reserved_room_type)) + 
+  geom_histogram() + 
+    labs(title="Reserved room by Lead time",
+         x="Lead time")  +
+  facet_wrap(~reserved_room_type, scale="free_y") + 
+  theme(legend.position="none")
+```
+
+The plot above, in consonance from the previous plots we can see room types L and P have the lowest lead time as they are either for only direct customer or complementary. We also see Rooms A and D are the most popular with lower lead times on average. Room B and C have a flatter spread here and when seen in consonance with their ADR distribution we can see that these rooms while relatively consistent on the ADR are on the lower side with higher lead times. Room L which caters to direct customers has the  Lead time and ADR distribution.
+
+##### Hypothesis 8
+
+**People who do not pay deposit while booking tend to cancel the booking**
+
+To test the above hypothesis we look at the trend of cancellations across deposit type and check the trend.
+
+```{r message=FALSE, fig.align='center'}
+hotels$is_canceled <- as.character(hotels$is_canceled)
+
+deposit_canc <- ggplot(data=hotels, aes(x=factor(deposit_type), fill=is_canceled)) +
+geom_bar(col = "black",stat="count", position=position_dodge()) +
+  labs(title = "Bookings by deposit type", x = "Deposit Type", y = "Bookings")
+
+deposit_canc
+```
+
+This shows us the most number of booking which get cancelled are where people have made no deposit for the booking. But this also gives us another interesting finding that the cancellation rate across booking with non refund is higher as compared to not cancelled bookings.
+
+This helps us deduce that, the rate of overall cancelled bookings (bookings cancelled/booking cancelled+not cancelled) is much higher in case of Non-refund deposit type as compared to the bookings where deposit is not paid.
+
+
+##### Hypothesis 9
+**Groups with children tend to pay deposits while booking**
+
+We plan to filter the number of bookings where members of Groups with children > 2 and see if these booking were made with deposit being paid while booking or not. This plot will help us accept or reject the hypothesis.
+
+```{r message=FALSE, warning=FALSE}
+temp_t  <- hotels %>%
+        filter(is_family == TRUE) %>%
+        select(is_family,is_deposit)
+
+ggplot(temp_t,aes(x=is_deposit))+
+  geom_bar(col="black", fill="#00BFC4")+
+  ggtitle("Desposit status for booking done by family") + 
+            xlab("Deposit Type") +
+            ylab("Deposit Booking count")
+```
+
+As per the plot, bookings made by the group members largely did not go for deposit.
+
+##### Hypothesis 10
+**Majority of the people tend to not pay deposits while booking**
+
+This is a simple but significant insight, usually in hotel industry it is observed that the count for deposits while bookings are way less compared to no deposits.Let's see the following plot to confirm this.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(hotels,aes(is_deposit))+
+  geom_bar(col="black", fill="#00BFC4")+
+  ggtitle("Did the customers pay deposits?") + 
+            xlab("Deposit Type") +
+            ylab("Deposit Booking count")
+```
+
+So,the plot confirms that usually customers do not pay deposits while booking.
+
+
+### 4.5 Market Channel Features {.tabset}
+
+
+#### 4.5.1 Hypothesis Proposed
+
+The market channel metrics conveys the booking channel that was used by the customers for making the reservation. Our market channel metrics contain - Agent, Company, Distribution Channel and Market Segment. Based on our initial exploration we put forward the following hypothesis to gauge the impact of the booking channel on customer bookings: 
+
+* The bookings made through travel agencies tend to not get cancelled
+* People with more family members tend to make bookings with travel agencies
+
+On a overall level we see that customers prefer to make reservations through *online travel agencies* as we can see in the below plots for both `city Hotel` and `Resort Hotel`. 
+
+```{r message=FALSE }
+hotel_mkseg <- hotels %>% select(hotel, arrival_date_year, market_segment, is_canceled) %>% filter(is_canceled == 0, ) %>% 
+              group_by(hotel, arrival_date_year, market_segment) %>% summarise(bookings = n()) 
+
+ggplot(data = hotel_mkseg[hotel_mkseg$hotel == "City Hotel",], aes(x = reorder(market_segment, bookings), y = bookings)) +
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  coord_flip() +
+  scale_y_continuous(name="Total Bookings") +
+  scale_x_discrete(name="Booking Channel") +
+  ggtitle("City Hotel Bookings through year trend") +
+  facet_wrap(~arrival_date_year)
+```
+
+```{r message=FALSE}
+ggplot(data = hotel_mkseg[hotel_mkseg$hotel == "Resort Hotel",], aes(x = reorder(market_segment, bookings), y = bookings)) +
+  geom_bar(stat = "identity", fill = "#00BFC4") +
+  coord_flip() +
+  scale_y_continuous(name="Total Bookings") +
+  scale_x_discrete(name="Booking Channel") +
+  ggtitle("Resort Hotel Bookings through year trend") +
+  facet_wrap(~arrival_date_year)
+```
+
+Over the years the online travel agencies have gained more popularity which is reflected in our data as the number of bookings increase on this channel.
+
+
+#### 4.5.2 Analysis and Trends to Answer Key Questions {.tabset}
+
+Based on the above data exploration we now check our data for trends to validate our proposed hypothesis to devise strategies to hotel bookings.
+
+##### Hypothesis 1 
+
+**People with more family members tend to make bookings with travel agencies**
+
+For the first hypothesis we will look at the number of bookings with family members > 2 and see if these bookings are majorly made through an agency or no using the agency_type variable. This plot will help us accept or reject the hypothesis.
+
+
+```{r message=FALSE,warning=FALSE}
+library(ggplot2)
+library(dplyr)
+hotels$members = hotels$adults + hotels$children + hotels$babies 
+hotels_not_cancelled <- hotels %>% filter(is_canceled==0)
+hotels_not_cancelled <- hotels_not_cancelled %>%
+  mutate(flag = if_else(members > 2, "More people(>2)","Less people(<=2)")) 
+
+hotels_not_cancelled$flag <- as.character(hotels_not_cancelled$flag)
+
+hotel_sub_mktg <- hotels_not_cancelled %>% 
+  mutate(market_segment = fct_relevel(market_segment,"Direct","Online TA","Complementary","Offline TA/TO","Groups","Corporate","Aviation")) %>% 
+  group_by(market_segment, flag) %>% 
+  summarise(count = n()) %>% 
+  mutate(perc = count/sum(count))
+
+ggplot(hotel_sub_mktg, aes(x = factor(market_segment), y = perc*100, fill = factor(flag))) +
+  geom_bar(stat="identity", width = 0.5) +
+  labs(x = "Marketing segment", y = "Percentage booking", fill = "Group Type") +
+ggtitle("% Bookings across marketing channels by family/group size")  +
+  theme_minimal() +
+  coord_flip()
+
+ 
+```
+
+
+Here first we filtered for the bookings which were not cancelled. Among those, we created a flag where, if the members > 2 for a booking, flag is 1, 2 or less, flag is 0.
+
+We see that booking with people more than 2 are done mostly direct bookings or through online travel agent. Which proves our hypothesis to be true.
+
+
+##### Hypothesis 2 
+
+
+**The bookings made through travel agencies tend to not get cancelled**
+
+
+In order to test the validity of the second hypothesis proposed, we will filter the bookings made through travel agencies from the market_segment and plot these booking against the cancellation flag is_canceled. This plot will help us accept or reject the hypothesis.
+
+```{r message=FALSE, warning=FALSE}
+install.packages("forcats")
+library(forcats)
+library(ggplot2)
+hotels$is_canceled <- as.character(hotels$is_canceled)
+
+hotels_sub <- hotels %>% 
+   mutate(market_segment = fct_relevel(market_segment,"Undefined","Groups","Online TA","Offline TA/TO","Aviation","Corporate",
+"Direct","Complementary"))%>%
+  group_by(market_segment, is_canceled) %>% 
+  summarise(count = n()) %>% 
+  mutate(perc = count/sum(count)) 
+
+ggplot(hotels_sub, aes(x = factor(market_segment), y = perc*100, fill = factor(is_canceled))) +
+  geom_bar(stat="identity", width = 0.5) +
+  labs(x = "Marketing segment", y = "Percentage booking", fill = "Cancellation") +
+ggtitle("% Cancellations across marketing channels ")  +
+  theme_minimal() +
+  coord_flip()
+
+
+```
+
+Here we see that comparing the number of cancellations across different channels, maximum cancellations occur for bookings made by Groups(~61%) followed by Online Travel agents(~34%)
+
+## 5. Insights and Recommendations
+
+Below are a few recommendations based on our analysis:
+
+1. **Early Bird Offers**: We observe that a lot of cancellations occur in the last few lead time buckets. To reduce these we can introduce early bird discounts as pricing is most likely the reason that these bookings get dropped
+2. **Double Book Anticipating Cancellations**: When the party size is greater than 12 we notice that the cancellation rate is 100%, so it maybe valuable to double book the rooms allocated in such instances so as to not lose out on bookings
+3. **Testing Out New Services**: Special service requests are high in the summer months, this might be the best time to test out planned service launches as customers tend to opt for them during these months
+4. **Offering Bump-ups on Meal Services**: To improve traction for the less preferred meal services, discounts can be offered on service bump-ups, i.e. SC/Undefined to BB, BB to HB and HB to FB
+5. **Incentive to Improve Bookings with Deposit Count**: Deposit based bookings can be promoted by reducing prices on them, this is often employed by travel booking websites 
+
+
