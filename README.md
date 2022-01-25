@@ -18,4 +18,4 @@ The Project is divided into two portions:
 
 1. R based: Used for Exploratory Data Analysis.  
 
-2. Pyhton: Used for CLassifcations Algorithms
+2. Python: Used for CLassifcations Algorithms
