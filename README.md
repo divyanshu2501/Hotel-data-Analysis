@@ -7,9 +7,15 @@ About Dataset:
 Dataset was records of visitors in Two hotels of Portugal. 
 
 120,000 entries
+
 32 variables
+
+Link to load the Dataset:
+
+'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv'
 
 The Project is divided into two portions:
 
 1. R based: Used for Exploratory Data Analysis.  
+
 2. Pyhton: Used for CLassifcations Algorithms
