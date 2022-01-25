@@ -6,9 +6,7 @@ About Dataset:
 
 Dataset was records of visitors in Two hotels of Portugal. 
 
-120,000 entries
-
-32 variables
+Shape of Dataset: 120000 * 32
 
 Link to load the Dataset:
 
