@@ -16,4 +16,6 @@ The Project is divided into two portions:
 
 1. R based: Used for Exploratory Data Analysis.  
 
-2. Python: Used for CLassifcations Algorithms
+2. Python: Used for Classifcations Algorithms
+
+XGboost turned out to be best performing model.
